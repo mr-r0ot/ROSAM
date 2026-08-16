@@ -1,0 +1,26 @@
+%ifndef ROSAM_CORE_ALGORITHM_INC_INCLUDED
+%define ROSAM_CORE_ALGORITHM_INC_INCLUDED 1
+extern rosam_linear_search
+extern rosam_binary_search
+extern rosam_sort
+extern rosam_quick_sort
+extern rosam_merge_sort
+extern rosam_heap_sort
+extern rosam_insertion_sort
+extern rosam_reverse
+extern rosam_find_min
+extern rosam_find_max
+extern rosam_sum
+extern rosam_product
+extern rosam_count
+extern rosam_count_if
+extern rosam_any
+extern rosam_all
+extern rosam_none
+extern rosam_copy_if
+extern rosam_transform
+extern rosam_fill
+extern rosam_partition
+extern rosam_stable_partition
+extern rosam_prefix_sum
+%endif

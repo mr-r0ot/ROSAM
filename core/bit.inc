@@ -1,0 +1,26 @@
+%ifndef ROSAM_CORE_BIT_INC_INCLUDED
+%define ROSAM_CORE_BIT_INC_INCLUDED 1
+extern rosam_bit_set
+extern rosam_bit_clear
+extern rosam_bit_toggle
+extern rosam_bit_test
+extern rosam_bit_shl
+extern rosam_bit_shr
+extern rosam_bit_sar
+extern rosam_bit_rol
+extern rosam_bit_ror
+extern rosam_bit_popcount
+extern rosam_bit_clz
+extern rosam_bit_ctz
+extern rosam_bit_parity
+extern rosam_bit_is_power2
+extern rosam_bit_next_power2
+extern rosam_bit_prev_power2
+extern rosam_bswap16
+extern rosam_bswap32
+extern rosam_bswap64
+extern rosam_bit_reverse8
+extern rosam_bit_reverse16
+extern rosam_bit_reverse32
+extern rosam_bit_reverse64
+%endif

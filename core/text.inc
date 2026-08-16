@@ -1,0 +1,20 @@
+%ifndef ROSAM_CORE_TEXT_INC_INCLUDED
+%define ROSAM_CORE_TEXT_INC_INCLUDED 1
+extern rosam_ascii_is_alpha
+extern rosam_ascii_is_digit
+extern rosam_ascii_is_alnum
+extern rosam_ascii_is_space
+extern rosam_ascii_is_upper
+extern rosam_ascii_is_lower
+extern rosam_ascii_to_upper
+extern rosam_ascii_to_lower
+extern rosam_utf8_len
+extern rosam_utf8_char_count
+extern rosam_utf8_next
+extern rosam_utf8_prev
+extern rosam_utf8_decode
+extern rosam_utf8_encode
+extern rosam_utf8_is_valid
+extern rosam_utf8_validate
+extern rosam_utf8_char_at
+%endif

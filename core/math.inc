@@ -1,0 +1,33 @@
+%ifndef ROSAM_CORE_MATH_INC_INCLUDED
+%define ROSAM_CORE_MATH_INC_INCLUDED 1
+extern rosam_gcd
+extern rosam_lcm
+extern rosam_pow_i32
+extern rosam_is_power2
+extern rosam_floor_log2
+extern rosam_ceil_log2
+extern rosam_sqrt_f64
+extern rosam_cbrt_f64
+extern rosam_sin_f64
+extern rosam_cos_f64
+extern rosam_tan_f64
+extern rosam_asin_f64
+extern rosam_acos_f64
+extern rosam_atan_f64
+extern rosam_atan2_f64
+extern rosam_sinh_f64
+extern rosam_cosh_f64
+extern rosam_tanh_f64
+extern rosam_exp_f64
+extern rosam_log_f64
+extern rosam_log10_f64
+extern rosam_log2_f64
+extern rosam_pow_f64
+extern rosam_floor_f64
+extern rosam_ceil_f64
+extern rosam_round_f64
+extern rosam_trunc_f64
+extern rosam_is_nan_f64
+extern rosam_is_inf_f64
+extern rosam_is_finite_f64
+%endif

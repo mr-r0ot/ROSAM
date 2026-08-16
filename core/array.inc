@@ -1,0 +1,32 @@
+%ifndef ROSAM_CORE_ARRAY_INC_INCLUDED
+%define ROSAM_CORE_ARRAY_INC_INCLUDED 1
+extern rosam_array_copy
+extern rosam_array_fill
+extern rosam_array_reverse
+extern rosam_array_find
+extern rosam_array_contains
+extern rosam_array_sort
+extern rosam_array_get
+extern rosam_array_set
+extern rosam_vec_create
+extern rosam_vec_destroy
+extern rosam_vec_push
+extern rosam_vec_pop
+extern rosam_vec_get
+extern rosam_vec_set
+extern rosam_vec_len
+extern rosam_vec_capacity
+extern rosam_vec_reserve
+extern rosam_vec_resize
+extern rosam_vec_clear
+extern rosam_stack_create
+extern rosam_stack_destroy
+extern rosam_stack_push
+extern rosam_stack_pop
+extern rosam_stack_peek
+extern rosam_stack_len
+extern rosam_deque_push_front
+extern rosam_deque_push_back
+extern rosam_deque_pop_front
+extern rosam_deque_pop_back
+%endif

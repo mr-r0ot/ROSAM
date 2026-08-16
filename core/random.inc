@@ -1,0 +1,20 @@
+%ifndef ROSAM_CORE_RANDOM_INC_INCLUDED
+%define ROSAM_CORE_RANDOM_INC_INCLUDED 1
+extern rosam_rng_init
+extern rosam_rng_seed
+extern rosam_rng_u8
+extern rosam_rng_u16
+extern rosam_rng_u32
+extern rosam_rng_u64
+extern rosam_rng_i32
+extern rosam_rng_i64
+extern rosam_rng_float
+extern rosam_rng_double
+extern rosam_rng_range
+extern rosam_rng_bytes
+extern rosam_rng_uniform
+extern rosam_rng_boolean
+extern rosam_rng_shuffle
+extern rosam_rng_choice
+extern rosam_secure_random
+%endif

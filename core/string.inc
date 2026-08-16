@@ -1,0 +1,31 @@
+%ifndef ROSAM_CORE_STRING_INC_INCLUDED
+%define ROSAM_CORE_STRING_INC_INCLUDED 1
+extern rosam_str_len
+extern rosam_str_nlen
+extern rosam_str_copy
+extern rosam_str_copy_n
+extern rosam_str_concat
+extern rosam_str_concat_n
+extern rosam_str_compare
+extern rosam_str_compare_n
+extern rosam_str_equal
+extern rosam_str_equal_n
+extern rosam_str_equal_ignorecase
+extern rosam_str_find
+extern rosam_str_char
+extern rosam_str_char_last
+extern rosam_str_prefix
+extern rosam_str_suffix
+extern rosam_str_contains
+extern rosam_str_reverse
+extern rosam_str_to_upper
+extern rosam_str_to_lower
+extern rosam_str_trim
+extern rosam_str_trim_left
+extern rosam_str_trim_right
+extern rosam_str_replace_char
+extern rosam_str_duplicate
+extern rosam_str_duplicate_n
+extern rosam_str_count_char
+extern rosam_str_count_substr
+%endif

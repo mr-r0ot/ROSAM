@@ -1,0 +1,21 @@
+%ifndef ROSAM_CORE_FORMAT_INC_INCLUDED
+%define ROSAM_CORE_FORMAT_INC_INCLUDED 1
+extern rosam_format_i8
+extern rosam_format_i16
+extern rosam_format_i32
+extern rosam_format_i64
+extern rosam_format_u8
+extern rosam_format_u16
+extern rosam_format_u32
+extern rosam_format_u64
+extern rosam_format_bin
+extern rosam_format_oct
+extern rosam_format_dec
+extern rosam_format_hex
+extern rosam_format_f32
+extern rosam_format_f64
+extern rosam_format_char
+extern rosam_format_bool
+extern rosam_format_append
+extern rosam_format_value
+%endif

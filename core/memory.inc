@@ -1,0 +1,14 @@
+%ifndef ROSAM_CORE_MEMORY_INC_INCLUDED
+%define ROSAM_CORE_MEMORY_INC_INCLUDED 1
+extern rosam_mem_copy
+extern rosam_mem_move
+extern rosam_mem_set
+extern rosam_mem_zero
+extern rosam_mem_compare
+extern rosam_mem_equal
+extern rosam_mem_find
+extern rosam_mem_alloc
+extern rosam_mem_calloc
+extern rosam_mem_realloc
+extern rosam_mem_free
+%endif
