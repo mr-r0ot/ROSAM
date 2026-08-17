@@ -318,7 +318,7 @@ section .text
 ; Return true when RAX is a Linux syscall error (-4095..-1).
 rosam_linux_is_error:
     cmp rax, -4095
-    jae .yes
+    jae near .yes
     xor eax, eax
     ret
 .yes:
@@ -338,7 +338,7 @@ rosam_linux_u64_to_cstr:
     dec r11
     mov [r11], dl
     test rax, rax
-    jnz .next
+    jnz near .next
     mov rax, r11
     ret
 
@@ -349,9 +349,9 @@ rosam_linux_write_cstr:
     xor edx, edx
 .scan:
     cmp byte [r11+rdx], 0
-    je .ready
+    je near .ready
     inc rdx
-    jmp .scan
+    jmp near .scan
 .ready:
     mov rcx, r11
     call rosam_io_write_buf
@@ -372,7 +372,7 @@ rosam_io_write_buf:
     syscall
     ; return 0 on success, -1 on syscall failure
     test rax, rax
-    js .fail
+    js near .fail
     xor eax, eax
     ret
 .fail:
@@ -396,7 +396,7 @@ global rosam_io_input
 rosam_io_input:
     ; RCX=destination, EDX=capacity excluding NUL, R8=len output pointer
     test edx, edx
-    jz .fail
+    jz near .fail
 
     ; stdin -> destination. Read at most capacity bytes, leaving one byte for NUL.
     mov r9, rcx
@@ -408,25 +408,25 @@ rosam_io_input:
     mov edx, r10d
     syscall
     test rax, rax
-    js .fail
+    js near .fail
 
     mov r11, rax
     xor r10d, r10d
 .scan:
     cmp r10, r11
-    jae .terminate
+    jae near .terminate
     mov al, byte [r9+r10]
     cmp al, 10
-    je .terminate
+    je near .terminate
     cmp al, 13
-    je .terminate
+    je near .terminate
     inc r10
-    jmp .scan
+    jmp near .scan
 
 .terminate:
     mov byte [r9+r10], 0
     test r8, r8
-    jz .return_len
+    jz near .return_len
     mov [r8], r10
 .return_len:
     mov rax, r10
@@ -435,7 +435,7 @@ rosam_io_input:
 .fail:
     mov qword [rel rosam_linux_error], ROSAM_ERR_IO
     test r8, r8
-    jz .fail_no_len
+    jz near .fail_no_len
     mov qword [r8], 0
 .fail_no_len:
     mov rax, -1
@@ -451,34 +451,34 @@ rosam_io_input_i32:
     lea r8,[rel rosam_linux_input_len]
     call rosam_io_input
     test rax,rax
-    js .fail
+    js near .fail
     mov r11,rax
     lea r10,[rel rosam_linux_input_buf]
     xor eax,eax
     xor r9d,r9d
     xor r8d,r8d
     test r11,r11
-    jz .store
+    jz near .store
     cmp byte [r10],'-'
-    jne .digits
+    jne near .digits
     mov r8d,1
     mov r9d,1
 .digits:
     cmp r9,r11
-    jae .store
+    jae near .store
     movzx edx,byte [r10+r9]
     cmp edx,'0'
-    jb .store
+    jb near .store
     cmp edx,'9'
-    ja .store
+    ja near .store
     imul eax,eax,10
     sub edx,'0'
     add eax,edx
     inc r9
-    jmp .digits
+    jmp near .digits
 .store:
     test r8d,r8d
-    jz .write
+    jz near .write
     neg eax
 .write:
     mov rcx,[rsp]
@@ -498,7 +498,7 @@ rosam_io_print_i32:
     sub rsp,24
     mov eax,[rcx]
     test eax,eax
-    jns .positive
+    jns near .positive
     neg eax
     mov [rsp],eax
     lea rcx,[rel rosam_linux_minus]
@@ -516,7 +516,7 @@ rosam_io_print_i32:
     dec r11
     mov [r11],dl
     test eax,eax
-    jnz .convert
+    jnz near .convert
     mov rcx,r11
     call rosam_linux_write_cstr
     add rsp,24
@@ -528,7 +528,7 @@ rosam_io_print_i64:
     sub rsp,24
     mov rax,[rcx]
     test rax,rax
-    jns .positive
+    jns near .positive
     neg rax
     mov [rsp],rax
     lea rcx,[rel rosam_linux_minus]
@@ -546,7 +546,7 @@ rosam_io_print_i64:
     dec r11
     mov [r11],dl
     test rax,rax
-    jnz .convert
+    jnz near .convert
     mov rcx,r11
     call rosam_linux_write_cstr
     add rsp,24
@@ -600,12 +600,12 @@ global rosam_i32_div
 rosam_i32_div:
     mov r10d, dword [rdx]
     test r10d, r10d
-    jz .div0
+    jz near .div0
     mov eax, dword [rcx]
     cmp eax, 0x80000000
-    jne .normal
+    jne near .normal
     cmp r10d, -1
-    je .overflow
+    je near .overflow
 .normal:
     cdq
     idiv r10d
@@ -625,12 +625,12 @@ global rosam_i32_mod
 rosam_i32_mod:
     mov r10d, dword [rdx]
     test r10d, r10d
-    jz .div0
+    jz near .div0
     mov eax, dword [rcx]
     cmp eax, 0x80000000
-    jne .normal
+    jne near .normal
     cmp r10d, -1
-    je .overflow
+    je near .overflow
 .normal:
     cdq
     idiv r10d
@@ -674,13 +674,13 @@ global rosam_i64_div
 rosam_i64_div:
     mov r10, qword [rdx]
     test r10, r10
-    jz .div0
+    jz near .div0
     mov rax, qword [rcx]
     mov r11, 0x8000000000000000
     cmp rax, r11
-    jne .normal
+    jne near .normal
     cmp r10, -1
-    je .overflow
+    je near .overflow
 .normal:
     cqo
     idiv r10
@@ -700,13 +700,13 @@ global rosam_i64_mod
 rosam_i64_mod:
     mov r10, qword [rdx]
     test r10, r10
-    jz .div0
+    jz near .div0
     mov rax, qword [rcx]
     mov r11, 0x8000000000000000
     cmp rax, r11
-    jne .normal
+    jne near .normal
     cmp r10, -1
-    je .overflow
+    je near .overflow
 .normal:
     cqo
     idiv r10
@@ -766,12 +766,12 @@ rosam_str_equal:
 .eq_loop:
     mov al, byte [r8]
     cmp al, byte [r9]
-    jne .false
+    jne near .false
     test al, al
-    je .true
+    je near .true
     inc r8
     inc r9
-    jmp .eq_loop
+    jmp near .eq_loop
 .true:
     mov eax, 1
     ret
@@ -789,7 +789,7 @@ rosam_str_copy:
     inc r8
     inc r9
     test al, al
-    jne .copy_loop
+    jne near .copy_loop
     xor eax, eax
     ret
 
@@ -881,43 +881,43 @@ global rosam_error_name
 rosam_error_name:
     lea rax,[rel rosam_linux_err_none]
     cmp rcx,ROSAM_ERR_NONE
-    je .ret
+    je near .ret
     lea rax,[rel rosam_linux_err_invalid]
     cmp rcx,ROSAM_ERR_INVALID_ARGUMENT
-    je .ret
+    je near .ret
     lea rax,[rel rosam_linux_err_null]
     cmp rcx,ROSAM_ERR_NULL
-    je .ret
+    je near .ret
     lea rax,[rel rosam_linux_err_overflow]
     cmp rcx,ROSAM_ERR_OVERFLOW
-    je .ret
+    je near .ret
     lea rax,[rel rosam_linux_err_underflow]
     cmp rcx,ROSAM_ERR_UNDERFLOW
-    je .ret
+    je near .ret
     lea rax,[rel rosam_linux_err_oom]
     cmp rcx,ROSAM_ERR_OUT_OF_MEMORY
-    je .ret
+    je near .ret
     lea rax,[rel rosam_linux_err_range]
     cmp rcx,ROSAM_ERR_OUT_OF_RANGE
-    je .ret
+    je near .ret
     lea rax,[rel rosam_linux_err_div0]
     cmp rcx,ROSAM_ERR_DIV_ZERO
-    je .ret
+    je near .ret
     lea rax,[rel rosam_linux_err_parse]
     cmp rcx,ROSAM_ERR_PARSE
-    je .ret
+    je near .ret
     lea rax,[rel rosam_linux_err_encoding]
     cmp rcx,ROSAM_ERR_ENCODING
-    je .ret
+    je near .ret
     lea rax,[rel rosam_linux_err_notfound]
     cmp rcx,ROSAM_ERR_NOT_FOUND
-    je .ret
+    je near .ret
     lea rax,[rel rosam_linux_err_unsupported]
     cmp rcx,ROSAM_ERR_UNSUPPORTED
-    je .ret
+    je near .ret
     lea rax,[rel rosam_linux_err_io]
     cmp rcx,ROSAM_ERR_IO
-    je .ret
+    je near .ret
     lea rax,[rel rosam_linux_err_state]
 .ret:
     ret
@@ -926,13 +926,13 @@ rosam_error_name:
 global rosam_error_message
 rosam_error_message:
     mov rcx,[rel rosam_linux_error]
-    jmp rosam_error_name
+    jmp near rosam_error_name
 
 
 global rosam_mem_copy
 rosam_mem_copy:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     sub rsp,8
     mov [rsp],rcx
     mov rdi,rcx
@@ -951,7 +951,7 @@ rosam_mem_copy:
 global rosam_mem_move
 rosam_mem_move:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     sub rsp,8
     mov [rsp],rcx
     mov rdi,rcx
@@ -970,7 +970,7 @@ rosam_mem_move:
 global rosam_mem_set
 rosam_mem_set:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     sub rsp,8
     mov [rsp],rcx
     mov rdi,rcx
@@ -989,7 +989,7 @@ rosam_mem_set:
 global rosam_mem_zero
 rosam_mem_zero:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     sub rsp,8
     mov [rsp],rcx
     mov rdi,rcx
@@ -1045,7 +1045,7 @@ rosam_mem_alloc:
     call malloc
     add rsp,8
     test rax,rax
-    jnz .ok
+    jnz near .ok
     mov qword [rel rosam_linux_error],ROSAM_ERR_OUT_OF_MEMORY
 .ok: ret
 
@@ -1058,7 +1058,7 @@ rosam_mem_calloc:
     call calloc
     add rsp,8
     test rax,rax
-    jnz .ok
+    jnz near .ok
     mov qword [rel rosam_linux_error],ROSAM_ERR_OUT_OF_MEMORY
 .ok: ret
 
@@ -1071,7 +1071,7 @@ rosam_mem_realloc:
     call realloc
     add rsp,8
     test rax,rax
-    jnz .ok
+    jnz near .ok
     mov qword [rel rosam_linux_error],ROSAM_ERR_OUT_OF_MEMORY
 .ok: ret
 
@@ -1108,13 +1108,13 @@ rosam_str_nlen:
 global rosam_str_copy_n
 rosam_str_copy_n:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     mov r10,r8
     sub rsp,24
     mov [rsp+8],rcx
     mov [rsp+16],rdx
     test r10,r10
-    jz .empty
+    jz near .empty
     mov rdi,rdx
     call strlen
     cmp rax,r10
@@ -1215,26 +1215,26 @@ rosam_str_contains:
 global rosam_str_equal_ignorecase
 rosam_str_equal_ignorecase:
     test rcx,rcx
-    jz .no
+    jz near .no
     test rdx,rdx
-    jz .no
+    jz near .no
 .loop:
     mov al,[rcx]
     mov r8b,[rdx]
     cmp al,0
-    jne .a
+    jne near .a
     test r8b,r8b
-    jz .yes
+    jz near .yes
 .a:
     call rosam_ascii_to_lower_byte
     mov r9b,al
     mov al,r8b
     call rosam_ascii_to_lower_byte
     cmp r9b,al
-    jne .no
+    jne near .no
     inc rcx
     inc rdx
-    jmp .loop
+    jmp near .loop
 .yes: mov eax,1; ret
 .no: xor eax,eax; ret
 
@@ -1242,9 +1242,9 @@ rosam_str_equal_ignorecase:
 global rosam_str_concat
 rosam_str_concat:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     test rdx,rdx
-    jz .bad
+    jz near .bad
     sub rsp,40
     mov [rsp+8],rcx
     mov [rsp+16],rdx
@@ -1271,9 +1271,9 @@ rosam_str_concat:
 global rosam_str_concat_n
 rosam_str_concat_n:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     test rdx,rdx
-    jz .bad
+    jz near .bad
     sub rsp,48
     mov [rsp+8],rcx
     mov [rsp+16],rdx
@@ -1286,7 +1286,7 @@ rosam_str_concat_n:
     mov r8,rax
     mov r9,[rsp+24]
     cmp r8,r9
-    jbe .len_ok
+    jbe near .len_ok
     mov r8,r9
 .len_ok:
     mov rdi,[rsp+8]
@@ -1310,9 +1310,9 @@ rosam_str_concat_n:
 global rosam_str_prefix
 rosam_str_prefix:
     test rcx,rcx
-    jz .no
+    jz near .no
     test rdx,rdx
-    jz .no
+    jz near .no
     sub rsp,40
     mov [rsp+8],rcx
     mov [rsp+16],rdx
@@ -1324,7 +1324,7 @@ rosam_str_prefix:
     mov [rsp+32],rax
     mov rax,[rsp+32]
     cmp rax,[rsp+24]
-    ja .no_cleanup
+    ja near .no_cleanup
     mov rdx,rax
     mov rdi,[rsp+8]
     mov rsi,[rsp+16]
@@ -1344,9 +1344,9 @@ rosam_str_prefix:
 global rosam_str_suffix
 rosam_str_suffix:
     test rcx,rcx
-    jz .no
+    jz near .no
     test rdx,rdx
-    jz .no
+    jz near .no
     sub rsp,40
     mov [rsp+8],rcx
     mov [rsp+16],rdx
@@ -1358,7 +1358,7 @@ rosam_str_suffix:
     mov [rsp+32],rax
     mov r9,[rsp+32]
     cmp r9,[rsp+24]
-    ja .no_cleanup
+    ja near .no_cleanup
     mov r10,[rsp+24]
     sub r10,r9
     mov rdi,[rsp+8]
@@ -1381,25 +1381,25 @@ rosam_str_suffix:
 global rosam_str_reverse
 rosam_str_reverse:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     sub rsp,24
     mov [rsp+8],rcx
     mov rdi,rcx
     call strlen
     test rax,rax
-    jz .done
+    jz near .done
     mov r8,[rsp+8]
     lea r9,[r8+rax-1]
 .loop:
     cmp r8,r9
-    jae .done
+    jae near .done
     mov al,[r8]
     mov dl,[r9]
     mov [r8],dl
     mov [r9],al
     inc r8
     dec r9
-    jmp .loop
+    jmp near .loop
 .done:
     mov rax,[rsp+8]
     add rsp,24
@@ -1416,11 +1416,11 @@ rosam_str_to_upper:
 .loop:
     mov al,[r8]
     test al,al
-    jz .done
+    jz near .done
     cmp al,'a'
-    jb .next
+    jb near .next
     cmp al,'z'
-    ja .next
+    ja near .next
     sub al,32
     mov [r8],al
 .next: inc r8; jmp .loop
@@ -1433,11 +1433,11 @@ rosam_str_to_lower:
 .loop:
     mov al,[r8]
     test al,al
-    jz .done
+    jz near .done
     cmp al,'A'
-    jb .next
+    jb near .next
     cmp al,'Z'
-    ja .next
+    ja near .next
     add al,32
     mov [r8],al
 .next: inc r8; jmp .loop
@@ -1447,29 +1447,29 @@ rosam_str_to_lower:
 global rosam_str_trim_left
 rosam_str_trim_left:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     sub rsp,24
     mov [rsp+8],rcx
     mov r8,rcx
 .scan:
     mov al,[r8]
     test al,al
-    jz .empty
+    jz near .empty
     cmp al,' '
-    je .skip
+    je near .skip
     cmp al,9
-    je .skip
+    je near .skip
     cmp al,10
-    je .skip
+    je near .skip
     cmp al,13
-    je .skip
-    jmp .move
+    je near .skip
+    jmp near .move
 .skip:
     inc r8
-    jmp .scan
+    jmp near .scan
 .move:
     cmp r8,rcx
-    je .done
+    je near .done
     mov rdi,r8
     call strlen
     inc rax
@@ -1495,32 +1495,32 @@ rosam_str_trim_left:
 global rosam_str_trim_right
 rosam_str_trim_right:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     sub rsp,24
     mov [rsp+8],rcx
     mov rdi,rcx
     call strlen
     test rax,rax
-    jz .done
+    jz near .done
     mov r8,[rsp+8]
     lea r9,[r8+rax-1]
 .loop:
     mov al,[r9]
     cmp al,' '
-    je .cut
+    je near .cut
     cmp al,9
-    je .cut
+    je near .cut
     cmp al,10
-    je .cut
+    je near .cut
     cmp al,13
-    je .cut
-    jmp .done
+    je near .cut
+    jmp near .done
 .cut:
     mov byte [r9],0
     cmp r9,r8
-    je .done
+    je near .done
     dec r9
-    jmp .loop
+    jmp near .loop
 .done:
     mov rax,[rsp+8]
     add rsp,24
@@ -1537,7 +1537,7 @@ rosam_str_trim:
     call rosam_str_trim_left
     add rsp,8
     mov rcx,rax
-    jmp rosam_str_trim_right
+    jmp near rosam_str_trim_right
 
 
 global rosam_str_replace_char
@@ -1547,9 +1547,9 @@ rosam_str_replace_char:
     mov r10b,r8b
 .loop: mov al,[rcx]
     test al,al
-    jz .done
+    jz near .done
     cmp al,r9b
-    jne .next
+    jne near .next
     mov [rcx],r10b
 .next: inc rcx; jmp .loop
 .done: xor eax,eax; ret
@@ -1561,9 +1561,9 @@ rosam_str_count_char:
     xor eax,eax
 .loop: mov dl,[rcx]
     test dl,dl
-    jz .done
+    jz near .done
     cmp dl,r8b
-    jne .next
+    jne near .next
     inc eax
 .next: inc rcx; jmp .loop
 .done: ret
@@ -1572,9 +1572,9 @@ rosam_str_count_char:
 global rosam_str_count_substr
 rosam_str_count_substr:
     test rcx,rcx
-    jz .done_zero
+    jz near .done_zero
     test rdx,rdx
-    jz .done_zero
+    jz near .done_zero
     sub rsp,40
     mov [rsp+8],rcx
     mov [rsp+16],rdx
@@ -1584,11 +1584,11 @@ rosam_str_count_substr:
     mov rsi,[rsp+16]
     call strstr
     test rax,rax
-    jz .done
+    jz near .done
     inc qword [rsp+24]
     lea rcx,[rax+1]
     mov [rsp+8],rcx
-    jmp .loop
+    jmp near .loop
 .done:
     mov rax,[rsp+24]
     add rsp,40
@@ -1601,7 +1601,7 @@ rosam_str_count_substr:
 global rosam_str_duplicate
 rosam_str_duplicate:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     sub rsp,40
     mov [rsp+8],rcx
     mov rdi,rcx
@@ -1611,7 +1611,7 @@ rosam_str_duplicate:
     mov rdi,rax
     call malloc
     test rax,rax
-    jz .oom
+    jz near .oom
     mov [rsp+24],rax
     mov rdi,rax
     mov rsi,[rsp+8]
@@ -1634,7 +1634,7 @@ rosam_str_duplicate:
 global rosam_str_duplicate_n
 rosam_str_duplicate_n:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     sub rsp,40
     mov [rsp+8],rcx
     mov [rsp+16],rdx
@@ -1649,7 +1649,7 @@ rosam_str_duplicate_n:
     mov rdi,r9
     call malloc
     test rax,rax
-    jz .oom
+    jz near .oom
     mov rcx,rax
     mov rdi,rcx
     mov rsi,[rsp+8]
@@ -1676,9 +1676,9 @@ rosam_ascii_is_alpha:
     mov al,cl
     or al,32
     cmp al,'a'
-    jb .no
+    jb near .no
     cmp al,'z'
-    ja .no
+    ja near .no
     mov eax,1
     ret
 .no: xor eax,eax; ret
@@ -1687,9 +1687,9 @@ rosam_ascii_is_alpha:
 global rosam_ascii_is_digit
 rosam_ascii_is_digit:
     cmp cl,'0'
-    jb .no
+    jb near .no
     cmp cl,'9'
-    ja .no
+    ja near .no
     mov eax,1
     ret
 .no: xor eax,eax; ret
@@ -1700,9 +1700,9 @@ rosam_ascii_is_alnum:
     mov al,cl
     or al,32
     cmp al,'a'
-    jb .digit
+    jb near .digit
     cmp al,'z'
-    jbe .yes
+    jbe near .yes
 .digit: cmp cl,'0'; jb .no; cmp cl,'9'; ja .no
 .yes: mov eax,1; ret
 .no: xor eax,eax; ret
@@ -1739,6 +1739,17 @@ rosam_ascii_to_upper:
 .ret: movzx eax,al; ret
 
 
+
+global rosam_ascii_to_lower_byte
+rosam_ascii_to_lower_byte:
+    cmp al,'A'
+    jb .ret
+    cmp al,'Z'
+    ja .ret
+    add al,32
+.ret:
+    ret
+
 global rosam_ascii_to_lower
 rosam_ascii_to_lower:
     mov al,cl
@@ -1749,13 +1760,13 @@ rosam_ascii_to_lower:
 
 global rosam_utf8_len
 rosam_utf8_len:
-    jmp rosam_str_len
+    jmp near rosam_str_len
 
 
 global rosam_utf8_char_count
 rosam_utf8_char_count:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     sub rsp,40
     mov [rsp+8],rcx
     mov qword [rsp+16],0
@@ -1763,15 +1774,15 @@ rosam_utf8_char_count:
     mov rcx,[rsp+8]
     movzx eax,byte [rcx]
     test al,al
-    jz .done
+    jz near .done
     call rosam_utf8_decode
     test rdx,rdx
-    jz .bad_cleanup
+    jz near .bad_cleanup
     mov rcx,[rsp+8]
     add rcx,rdx
     mov [rsp+8],rcx
     inc qword [rsp+16]
-    jmp .loop
+    jmp near .loop
 .done:
     mov rax,[rsp+16]
     add rsp,40
@@ -1788,24 +1799,24 @@ global rosam_utf8_decode
 rosam_utf8_decode:
     movzx eax,byte [rcx]
     test al,al
-    jz .bad
+    jz near .bad
     cmp al,0x7f
-    jbe .one
+    jbe near .one
     cmp al,0xc2
-    jb .bad
+    jb near .bad
     cmp al,0xdf
-    jbe .two
+    jbe near .two
     cmp al,0xef
-    jbe .three
+    jbe near .three
     cmp al,0xf4
-    jbe .four
-    jmp .bad
+    jbe near .four
+    jmp near .bad
 .two:
     movzx edx,byte [rcx+1]
     cmp dl,0x80
-    jb .bad
+    jb near .bad
     cmp dl,0xbf
-    ja .bad
+    ja near .bad
     mov r8d,eax
     and r8d,31
     shl r8d,6
@@ -1818,23 +1829,23 @@ rosam_utf8_decode:
     movzx edx,byte [rcx+1]
     movzx r8d,byte [rcx+2]
     cmp dl,0x80
-    jb .bad
+    jb near .bad
     cmp dl,0xbf
-    ja .bad
+    ja near .bad
     cmp r8b,0x80
-    jb .bad
+    jb near .bad
     cmp r8b,0xbf
-    ja .bad
+    ja near .bad
     cmp al,0xe0
-    jne .three_ed
+    jne near .three_ed
     cmp dl,0xa0
-    jb .bad
-    jmp .three_calc
+    jb near .bad
+    jmp near .three_calc
 .three_ed:
     cmp al,0xed
-    jne .three_calc
+    jne near .three_calc
     cmp dl,0x9f
-    ja .bad
+    ja near .bad
 .three_calc:
     mov eax,eax
     and eax,15
@@ -1851,26 +1862,26 @@ rosam_utf8_decode:
     movzx r8d,byte [rcx+2]
     movzx r9d,byte [rcx+3]
     cmp dl,0x80
-    jb .bad
+    jb near .bad
     cmp dl,0xbf
-    ja .bad
+    ja near .bad
     cmp r8b,0x80
-    jb .bad
+    jb near .bad
     cmp r8b,0xbf
-    ja .bad
+    ja near .bad
     cmp r9b,0x80
-    jb .bad
+    jb near .bad
     cmp r9b,0xbf
-    ja .bad
+    ja near .bad
     cmp al,0xf0
-    jne .four_f4
+    jne near .four_f4
     cmp dl,0x90
-    jb .bad
+    jb near .bad
 .four_f4:
     cmp al,0xf4
-    jne .four_calc
+    jne near .four_calc
     cmp dl,0x8f
-    ja .bad
+    ja near .bad
 .four_calc:
     and eax,7
     shl eax,18
@@ -1897,20 +1908,20 @@ rosam_utf8_decode:
 global rosam_utf8_encode
 rosam_utf8_encode:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     mov r8d,edx
     cmp r8d,0x7f
-    jbe .one
+    jbe near .one
     cmp r8d,0x7ff
-    jbe .two
+    jbe near .two
     cmp r8d,0xffff
-    jbe .three
+    jbe near .three
     cmp r8d,0x10ffff
-    ja .bad
+    ja near .bad
     cmp r8d,0xd800
-    jb .four
+    jb near .four
     cmp r8d,0xdfff
-    jbe .bad
+    jbe near .bad
 .four:
     mov eax,r8d
     shr eax,18
@@ -1973,12 +1984,12 @@ rosam_utf8_encode:
 global rosam_utf8_next
 rosam_utf8_next:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     sub rsp,24
     mov [rsp+8],rcx
     call rosam_utf8_decode
     test rdx,rdx
-    jz .bad_cleanup
+    jz near .bad_cleanup
     mov rcx,[rsp+8]
     add rcx,rdx
     mov rax,rcx
@@ -2000,9 +2011,9 @@ rosam_utf8_prev:
     mov dl,[rax]
     and dl,0xc0
     cmp dl,0x80
-    jne .ret
+    jne near .ret
     dec rax
-    jmp .loop
+    jmp near .loop
 .ret: ret
 .bad: xor eax,eax; ret
 
@@ -2010,85 +2021,85 @@ rosam_utf8_prev:
 global rosam_utf8_is_valid
 rosam_utf8_is_valid:
     test rcx,rcx
-    jz .bad
+    jz near .bad
 .loop:
     movzx eax,byte [rcx]
     test al,al
-    jz .yes
+    jz near .yes
     cmp al,0x7f
-    jbe .one
+    jbe near .one
     cmp al,0xc2
-    jb .bad
+    jb near .bad
     cmp al,0xdf
-    jbe .two
+    jbe near .two
     cmp al,0xef
-    jbe .three
+    jbe near .three
     cmp al,0xf4
-    jbe .four
-    jmp .bad
+    jbe near .four
+    jmp near .bad
 .two:
     mov dl,[rcx+1]
     cmp dl,0x80
-    jb .bad
+    jb near .bad
     cmp dl,0xbf
-    ja .bad
+    ja near .bad
     add rcx,2
-    jmp .loop
+    jmp near .loop
 .three:
     mov dl,[rcx+1]
     mov r8b,[rcx+2]
     cmp dl,0x80
-    jb .bad
+    jb near .bad
     cmp dl,0xbf
-    ja .bad
+    ja near .bad
     cmp r8b,0x80
-    jb .bad
+    jb near .bad
     cmp r8b,0xbf
-    ja .bad
+    ja near .bad
     cmp al,0xe0
-    jne .three_ed
+    jne near .three_ed
     cmp dl,0xa0
-    jb .bad
-    jmp .three_ok
+    jb near .bad
+    jmp near .three_ok
 .three_ed:
     cmp al,0xed
-    jne .three_ok
+    jne near .three_ok
     cmp dl,0x9f
-    ja .bad
+    ja near .bad
 .three_ok:
     add rcx,3
-    jmp .loop
+    jmp near .loop
 .four:
     mov dl,[rcx+1]
     mov r8b,[rcx+2]
     mov r9b,[rcx+3]
     cmp dl,0x80
-    jb .bad
+    jb near .bad
     cmp dl,0xbf
-    ja .bad
+    ja near .bad
     cmp r8b,0x80
-    jb .bad
+    jb near .bad
     cmp r8b,0xbf
-    ja .bad
+    ja near .bad
     cmp r9b,0x80
-    jb .bad
+    jb near .bad
     cmp r9b,0xbf
-    ja .bad
+    ja near .bad
     cmp al,0xf0
-    jne .four_f4
+    jne near .four_f4
     cmp dl,0x90
-    jb .bad
+    jb near .bad
 .four_f4:
     cmp al,0xf4
-    jne .four_ok
+    jne near .four_ok
     cmp dl,0x8f
-    ja .bad
+    ja near .bad
 .four_ok:
     add rcx,4
-    jmp .loop
+    jmp near .loop
 .one:
     inc rcx
-    jmp .loop
+    jmp near .loop
 .yes:
     mov eax,1
     ret
@@ -2100,13 +2111,13 @@ rosam_utf8_is_valid:
 
 global rosam_utf8_validate
 rosam_utf8_validate:
-    jmp rosam_utf8_is_valid
+    jmp near rosam_utf8_is_valid
 
 
 global rosam_utf8_char_at
 rosam_utf8_char_at:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     sub rsp,40
     mov [rsp+8],rcx
     mov [rsp+16],rdx
@@ -2114,19 +2125,19 @@ rosam_utf8_char_at:
 .loop:
     mov r10,[rsp+24]
     cmp r10,[rsp+16]
-    jae .bad_cleanup
+    jae near .bad_cleanup
     mov rcx,[rsp+8]
     call rosam_utf8_decode
     test rdx,rdx
-    jz .bad_cleanup
+    jz near .bad_cleanup
     mov r10,[rsp+24]
     cmp r10,[rsp+16]
-    je .found
+    je near .found
     mov rcx,[rsp+8]
     add rcx,rdx
     mov [rsp+8],rcx
     inc qword [rsp+24]
-    jmp .loop
+    jmp near .loop
 .found:
     add rsp,40
     ret
@@ -2214,12 +2225,12 @@ rosam_bit_popcount:
     xor edx,edx
 .loop:
     test eax,eax
-    jz .done
+    jz near .done
     mov r8d,eax
     dec r8d
     and eax,r8d
     inc edx
-    jmp .loop
+    jmp near .loop
 .done:
     mov eax,edx
     ret
@@ -2254,7 +2265,7 @@ global rosam_bit_prev_power2
 rosam_bit_prev_power2:
     mov eax,[rcx]
     test eax,eax
-    jz .zero
+    jz near .zero
     bsr edx,eax
     mov ecx,edx
     mov eax,1
@@ -2354,28 +2365,28 @@ rosam_lcm:
     mov eax,[rcx]
     mov r8d,[rdx]
     test eax,eax
-    jz .zero
+    jz near .zero
     test r8d,r8d
-    jz .zero
+    jz near .zero
     mov r9d,r8d
     mov r10d,eax
     ; absolute values for gcd
     test eax,eax
-    jns .a_ok
+    jns near .a_ok
     neg eax
 .a_ok:
     test r8d,r8d
-    jns .b_ok
+    jns near .b_ok
     neg r8d
 .b_ok:
 .gcd:
     test r8d,r8d
-    jz .gcd_done
+    jz near .gcd_done
     xor edx,edx
     div r8d
     mov eax,r8d
     mov r8d,edx
-    jmp .gcd
+    jmp near .gcd
 .gcd_done:
     mov r11d,eax
     mov eax,r10d
@@ -2383,7 +2394,7 @@ rosam_lcm:
     idiv r11d
     imul eax,r9d
     test eax,eax
-    jns .ret
+    jns near .ret
     neg eax
 .ret:
     ret
@@ -2618,11 +2629,11 @@ rosam_is_finite_f64:
     mov rcx,rdx
     call rosam_is_nan_f64
     test eax,eax
-    jnz .no
+    jnz near .no
     mov rcx,rdx
     call rosam_is_inf_f64
     test eax,eax
-    jnz .no
+    jnz near .no
     add rsp,8
     mov eax,1
     ret
@@ -2664,12 +2675,12 @@ rosam_rng_u32:
 
 global rosam_rng_i32
 rosam_rng_i32:
-    jmp rosam_rng_u32
+    jmp near rosam_rng_u32
 
 
 global rosam_rng_i64
 rosam_rng_i64:
-    jmp rosam_rng_u64
+    jmp near rosam_rng_u64
 
 
 global rosam_rng_float
@@ -2692,11 +2703,11 @@ rosam_rng_double:
 global rosam_rng_range
 rosam_rng_range:
     cmp rdx,rcx
-    jb .bad
+    jb near .bad
     mov r8,rdx
     sub r8,rcx
     inc r8
-    jnz .bounded
+    jnz near .bounded
     ; Full uint64 range: one raw sample plus minimum.
     call rosam_rng_u64
     add rax,rcx
@@ -2712,7 +2723,7 @@ rosam_rng_range:
 .loop:
     call rosam_rng_u64
     cmp rax,r10
-    jb .loop
+    jb near .loop
     xor edx,edx
     div r8
     mov rax,rdx
@@ -2727,12 +2738,12 @@ rosam_rng_range:
 global rosam_rng_bytes
 rosam_rng_bytes:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     mov r8,rcx
     mov r9,rdx
 .loop:
     test r9,r9
-    jz .done
+    jz near .done
     call rosam_rng_u64
     mov r10,8
     cmp r9,r10
@@ -2743,8 +2754,8 @@ rosam_rng_bytes:
     shr rax,8
     dec r9
     dec r10
-    jnz .inner
-    jmp .loop
+    jnz near .inner
+    jmp near .loop
 .done:
     xor eax,eax
     ret
@@ -2756,7 +2767,7 @@ rosam_rng_bytes:
 
 global rosam_rng_uniform
 rosam_rng_uniform:
-    jmp rosam_rng_double
+    jmp near rosam_rng_double
 
 
 global rosam_rng_boolean
@@ -2767,31 +2778,31 @@ rosam_rng_boolean:
 global rosam_secure_random
 rosam_secure_random:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     sub rsp,24
     mov [rsp+8],rcx
     mov [rsp+16],rdx
 .loop:
     mov r8,[rsp+16]
     test r8,r8
-    jz .ok
+    jz near .ok
     mov eax,318
     xor edi,edi
     mov rsi,[rsp+8]
     mov rdx,r8
     cmp rdx,256
-    jbe .size_ok
+    jbe near .size_ok
     mov edx,256
 .size_ok:
     xor r10d,r10d
     syscall
     test rax,rax
-    js .fail
+    js near .fail
     test rax,rax
-    jz .fail
+    jz near .fail
     add qword [rsp+8],rax
     sub qword [rsp+16],rax
-    jmp .loop
+    jmp near .loop
 .ok:
     add rsp,24
     xor eax,eax
@@ -2810,11 +2821,11 @@ rosam_secure_random:
 global rosam_rng_choice
 rosam_rng_choice:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     test rdx,rdx
-    jz .bad
+    jz near .bad
     test r8,r8
-    jz .bad
+    jz near .bad
     sub rsp,24
     mov [rsp+8],rcx
     mov [rsp+16],rdx
@@ -2835,53 +2846,74 @@ rosam_rng_choice:
 
 global rosam_rng_shuffle
 rosam_rng_shuffle:
+    ; RCX = data
+    ; RDX = count
+    ; R8  = element_size
+    test rcx,rcx
+    jz near .bad
+    test r8,r8
+    jz near .bad
     cmp rdx,2
-    jb .done
-    test r8,r8
-    jz .bad
-    sub rsp,40
-    mov [rsp+8],rcx
-    mov [rsp+16],rdx
-    mov [rsp+24],r8
-    mov qword [rsp+32],0
+    jb near .success
+
+    sub rsp,56
+    mov [rsp+8],rcx       ; data
+    mov [rsp+16],rdx      ; count
+    mov [rsp+24],r8       ; element_size
+    mov qword [rsp+32],0  ; i
+
 .outer:
-    mov r9,[rsp+16]
-    dec r9
-    cmp [rsp+32],r9
-    jae .success
-    mov r10,[rsp+16]
-    sub r10,1
-    sub r10,[rsp+32]
-    inc r10
-    call rosam_rng_u64
-    xor edx,edx
-    div r10
-    mov r11,rdx
-    mov r10,[rsp+32]
-    imul r10,[rsp+24]
-    mov rdx,r11
-    imul rdx,[rsp+24]
-    mov r8,[rsp+24]
-    add r10,[rsp+8]
-    add rdx,[rsp+8]
+    mov rax,[rsp+16]
+    dec rax               ; last index
+    cmp [rsp+32],rax
+    jae near .success_frame
+
+    ; range = [0, i]
+    mov rcx,0
+    mov rdx,[rsp+32]
+    call rosam_rng_range
+    mov [rsp+40],rax      ; j
+
+    ; offset_i = i * element_size
+    mov rax,[rsp+32]
+    imul rax,[rsp+24]
+    mov r10,rax
+
+    ; offset_j = j * element_size
+    mov rax,[rsp+40]
+    imul rax,[rsp+24]
+    mov r11,rax
+
+    ; addresses
+    mov rax,[rsp+8]
+    add r10,rax
+    add r11,rax
+
+    ; byte-wise swap
+    mov r9,[rsp+24]
 .swap:
-    test r8,r8
-    jz .next
+    test r9,r9
+    jz near .next
     mov al,[r10]
-    mov cl,[rdx]
-    mov [r10],cl
-    mov [rdx],al
+    mov dl,[r11]
+    mov [r10],dl
+    mov [r11],al
     inc r10
-    inc rdx
-    dec r8
-    jmp .swap
+    inc r11
+    dec r9
+    jmp near .swap
+
 .next:
     inc qword [rsp+32]
-    jmp .outer
+    jmp near .outer
+
+.success_frame:
+    add rsp,56
+
 .success:
-    add rsp,40
     xor eax,eax
     ret
+
 .bad:
     mov dword [rel rosam_linux_error],ROSAM_ERR_INVALID_ARGUMENT
     mov eax,-1
@@ -2890,12 +2922,12 @@ rosam_rng_shuffle:
 
 global rosam_array_copy
 rosam_array_copy:
-    jmp rosam_mem_copy
+    jmp near rosam_mem_copy
 
 
 global rosam_array_fill
 rosam_array_fill:
-    jmp rosam_mem_set
+    jmp near rosam_mem_set
 
 
 global rosam_array_get
@@ -2958,9 +2990,9 @@ rosam_array_reverse:
 global rosam_vec_create
 rosam_vec_create:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     test rdx,rdx
-    jz .bad
+    jz near .bad
     sub rsp,40
     mov [rsp+8],rcx
     mov [rsp+16],rdx
@@ -2970,15 +3002,15 @@ rosam_vec_create:
     mov qword [rcx+32],0
     mov [rcx+16],r8
     test r8,r8
-    jz .zero
+    jz near .zero
     mov rax,r8
     mul rdx
     test rdx,rdx
-    jnz .oom
+    jnz near .oom
     mov rdi,rax
     call malloc
     test rax,rax
-    jz .oom
+    jz near .oom
     mov rcx,[rsp+8]
     mov [rcx],rax
     add rsp,40
@@ -3004,12 +3036,12 @@ rosam_vec_create:
 global rosam_vec_destroy
 rosam_vec_destroy:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     sub rsp,24
     mov [rsp+8],rcx
     mov rdi,[rcx]
     test rdi,rdi
-    jz .zero
+    jz near .zero
     call free
 .zero:
     mov rcx,[rsp+8]
@@ -3043,27 +3075,27 @@ rosam_vec_clear:
 global rosam_vec_reserve
 rosam_vec_reserve:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     mov r8,[rcx+24]
     test r8,r8
-    jz .bad
+    jz near .bad
     cmp rdx,[rcx+16]
-    jbe .ok
+    jbe near .ok
     sub rsp,40
     mov [rsp+8],rcx
     mov [rsp+16],rdx
     mov rax,rdx
     mul r8
     test rdx,rdx
-    jnz .oom
+    jnz near .oom
     mov rdi,[rcx]
     test rdi,rdi
-    jz .alloc
+    jz near .alloc
     mov rsi,rax
     mov rdi,[rcx]
     call realloc
     test rax,rax
-    jz .oom
+    jz near .oom
     mov rcx,[rsp+8]
     mov [rcx],rax
     mov rdx,[rsp+16]
@@ -3075,12 +3107,15 @@ rosam_vec_reserve:
     mov rdi,rax
     call malloc
     test rax,rax
-    jz .oom
+    jz near .oom
     mov rcx,[rsp+8]
     mov [rcx],rax
     mov rdx,[rsp+16]
     mov [rcx+16],rdx
     add rsp,40
+    xor eax,eax
+    ret
+.ok:
     xor eax,eax
     ret
 .oom:
@@ -3097,7 +3132,7 @@ rosam_vec_reserve:
 global rosam_vec_resize
 rosam_vec_resize:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     sub rsp,40
     mov [rsp+8],rcx
     mov [rsp+16],rdx
@@ -3106,31 +3141,31 @@ rosam_vec_resize:
     mov r9,[rcx+24]
     mov [rsp+32],r9
     cmp rdx,r8
-    jbe .set_only
+    jbe near .set_only
     cmp rdx,[rcx+16]
-    jbe .capacity_ok
+    jbe near .capacity_ok
     mov r10,[rcx+16]
     test r10,r10
-    jnz .grow
+    jnz near .grow
     mov r10,1
 .grow:
     cmp r10,rdx
-    jae .reserve
+    jae near .reserve
     shl r10,1
-    jc .oom
-    jmp .grow
+    jc near .oom
+    jmp near .grow
 .reserve:
     mov rcx,[rsp+8]
     mov rdx,r10
     call rosam_vec_reserve
     test eax,eax
-    jnz .fail
+    jnz near .fail
 .capacity_ok:
     mov rcx,[rsp+8]
     mov r10,[rsp+16]
     mov r8,[rsp+24]
     cmp r10,r8
-    jbe .set_only
+    jbe near .set_only
     mov r9,[rsp+32]
     mov r11,[rcx]
     imul r8,r9
@@ -3166,25 +3201,25 @@ rosam_vec_resize:
 global rosam_vec_push
 rosam_vec_push:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     test rdx,rdx
-    jz .bad
+    jz near .bad
     sub rsp,40
     mov [rsp+8],rcx
     mov [rsp+16],rdx
     mov r8,[rcx+8]
     cmp r8,[rcx+16]
-    jb .room
+    jb near .room
     mov rdx,[rcx+16]
     test rdx,rdx
-    jnz .dbl
+    jnz near .dbl
     mov rdx,1
 .dbl:
     shl rdx,1
     mov rcx,[rsp+8]
     call rosam_vec_reserve
     test eax,eax
-    jnz .fail
+    jnz near .fail
 .room:
     mov rcx,[rsp+8]
     mov r8,[rcx+8]
@@ -3214,13 +3249,13 @@ rosam_vec_push:
 global rosam_vec_pop
 rosam_vec_pop:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     sub rsp,40
     mov [rsp+8],rcx
     mov [rsp+16],rdx
     mov r8,[rcx+8]
     test r8,r8
-    jz .empty
+    jz near .empty
     dec r8
     mov r9,[rcx+24]
     mov r10,[rcx]
@@ -3228,7 +3263,7 @@ rosam_vec_pop:
     imul r11,r9
     add r10,r11
     test rdx,rdx
-    jz .skip
+    jz near .skip
     mov rdi,rdx
     mov rsi,r10
     mov rdx,r9
@@ -3265,22 +3300,22 @@ rosam_vec_set:
 
 global rosam_stack_create
 rosam_stack_create:
-    jmp rosam_vec_create
+    jmp near rosam_vec_create
 
 
 global rosam_stack_destroy
 rosam_stack_destroy:
-    jmp rosam_vec_destroy
+    jmp near rosam_vec_destroy
 
 
 global rosam_stack_push
 rosam_stack_push:
-    jmp rosam_vec_push
+    jmp near rosam_vec_push
 
 
 global rosam_stack_pop
 rosam_stack_pop:
-    jmp rosam_vec_pop
+    jmp near rosam_vec_pop
 
 
 global rosam_stack_peek
@@ -3291,25 +3326,25 @@ rosam_stack_peek:
 
 global rosam_stack_len
 rosam_stack_len:
-    jmp rosam_vec_len
+    jmp near rosam_vec_len
 
 
 global rosam_deque_push_back
 rosam_deque_push_back:
-    jmp rosam_vec_push
+    jmp near rosam_vec_push
 
 
 global rosam_deque_pop_back
 rosam_deque_pop_back:
-    jmp rosam_vec_pop
+    jmp near rosam_vec_pop
 
 
 global rosam_deque_push_front
 rosam_deque_push_front:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     test rdx,rdx
-    jz .bad
+    jz near .bad
     sub rsp,56
     mov [rsp+8],rcx
     mov [rsp+16],rdx
@@ -3317,17 +3352,17 @@ rosam_deque_push_front:
     mov [rsp+24],r8
     mov r8,[rcx+8]
     cmp r8,[rcx+16]
-    jb .room
+    jb near .room
     mov rdx,[rcx+16]
     test rdx,rdx
-    jnz .grow
+    jnz near .grow
     mov rdx,1
 .grow:
     shl rdx,1
     mov rcx,[rsp+8]
     call rosam_vec_reserve
     test eax,eax
-    jnz .fail
+    jnz near .fail
 .room:
     mov rcx,[rsp+8]
     mov r8,[rsp+24]
@@ -3366,17 +3401,17 @@ rosam_deque_push_front:
 global rosam_deque_pop_front
 rosam_deque_pop_front:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     sub rsp,40
     mov [rsp+8],rcx
     mov [rsp+16],rdx
     mov r8,[rcx+8]
     test r8,r8
-    jz .empty
+    jz near .empty
     mov r9,[rcx+24]
     mov r10,[rcx]
     test rdx,rdx
-    jz .shift
+    jz near .shift
     mov rdi,rdx
     mov rsi,r10
     mov rdx,r9
@@ -3418,27 +3453,27 @@ rosam_binary_search:
 
 global rosam_sort
 rosam_sort:
-    jmp rosam_array_sort
+    jmp near rosam_array_sort
 
 
 global rosam_quick_sort
 rosam_quick_sort:
-    jmp rosam_array_sort
+    jmp near rosam_array_sort
 
 
 global rosam_merge_sort
 rosam_merge_sort:
-    jmp rosam_array_sort
+    jmp near rosam_array_sort
 
 
 global rosam_heap_sort
 rosam_heap_sort:
-    jmp rosam_array_sort
+    jmp near rosam_array_sort
 
 
 global rosam_insertion_sort
 rosam_insertion_sort:
-    jmp rosam_array_sort
+    jmp near rosam_array_sort
 
 
 global rosam_reverse
@@ -3472,13 +3507,13 @@ rosam_count:
     xor r9d,r9d
 .loop:
     cmp r9,rdx
-    jae .done
+    jae near .done
     cmp [rcx+r9*4],r8d
-    jne .next
+    jne near .next
     inc eax
 .next:
     inc r9
-    jmp .loop
+    jmp near .loop
 .done:
     ret
 
@@ -3495,18 +3530,18 @@ rosam_count_if:
 .loop:
     mov r10,[rsp+48]
     cmp r10,[rsp+16]
-    jae .done
+    jae near .done
     mov rcx,[rsp+8]
     lea rcx,[rcx+r10*4]
     mov rdx,r10
     mov rax,[rsp+32]
     call rax
     test eax,eax
-    jz .next
+    jz near .next
     inc qword [rsp+40]
 .next:
     inc qword [rsp+48]
-    jmp .loop
+    jmp near .loop
 .done:
     mov rax,[rsp+40]
     add rsp,56
@@ -3523,16 +3558,16 @@ rosam_any:
 .loop:
     mov r9,[rsp+32]
     cmp r9,[rsp+16]
-    jae .yes
+    jae near .yes
     mov rcx,[rsp+8]
     lea rcx,[rcx+r9*4]
     mov rdx,r9
     mov rax,[rsp+24]
     call rax
     test eax,eax
-    jnz .yes
+    jnz near .yes
     inc qword [rsp+32]
-    jmp .loop
+    jmp near .loop
 .yes:
     mov eax,1
     add rsp,56
@@ -3553,16 +3588,16 @@ rosam_all:
 .loop:
     mov r9,[rsp+32]
     cmp r9,[rsp+16]
-    jae .yes
+    jae near .yes
     mov rcx,[rsp+8]
     lea rcx,[rcx+r9*4]
     mov rdx,r9
     mov rax,[rsp+24]
     call rax
     test eax,eax
-    jz .no
+    jz near .no
     inc qword [rsp+32]
-    jmp .loop
+    jmp near .loop
 .yes:
     mov eax,1
     add rsp,56
@@ -3583,16 +3618,16 @@ rosam_none:
 .loop:
     mov r9,[rsp+32]
     cmp r9,[rsp+16]
-    jae .yes
+    jae near .yes
     mov rcx,[rsp+8]
     lea rcx,[rcx+r9*4]
     mov rdx,r9
     mov rax,[rsp+24]
     call rax
     test eax,eax
-    jnz .no
+    jnz near .no
     inc qword [rsp+32]
-    jmp .loop
+    jmp near .loop
 .yes:
     mov eax,1
     add rsp,56
@@ -3615,14 +3650,14 @@ rosam_copy_if:
 .loop:
     mov r10,[rsp+48]
     cmp r10,[rsp+24]
-    jae .done
+    jae near .done
     mov rcx,[rsp+16]
     lea rcx,[rcx+r10*4]
     mov rdx,r10
     mov rax,[rsp+32]
     call rax
     test eax,eax
-    jz .next
+    jz near .next
     mov r10,[rsp+48]
     mov rcx,[rsp+16]
     mov eax,[rcx+r10*4]
@@ -3632,7 +3667,7 @@ rosam_copy_if:
     inc qword [rsp+40]
 .next:
     inc qword [rsp+48]
-    jmp .loop
+    jmp near .loop
 .done:
     mov rax,[rsp+40]
     add rsp,72
@@ -3650,7 +3685,7 @@ rosam_transform:
 .loop:
     mov r10,[rsp+40]
     cmp r10,[rsp+24]
-    jae .done
+    jae near .done
     mov rcx,[rsp+16]
     lea rcx,[rcx+r10*4]
     mov rdx,r10
@@ -3660,7 +3695,7 @@ rosam_transform:
     mov rcx,[rsp+8]
     mov [rcx+r10*4],eax
     inc qword [rsp+40]
-    jmp .loop
+    jmp near .loop
 .done:
     xor eax,eax
     add rsp,56
@@ -3683,18 +3718,18 @@ rosam_partition:
 .loop:
     mov r10,[rsp+40]
     cmp r10,[rsp+16]
-    jae .done
+    jae near .done
     mov rcx,[rsp+8]
     lea rcx,[rcx+r10*4]
     mov rdx,r10
     mov rax,[rsp+24]
     call rax
     test eax,eax
-    jz .next
+    jz near .next
     mov r10,[rsp+40]
     mov r9,[rsp+32]
     cmp r9,r10
-    je .inc
+    je near .inc
     mov rcx,[rsp+8]
     mov eax,[rcx+r10*4]
     xchg eax,[rcx+r9*4]
@@ -3703,7 +3738,7 @@ rosam_partition:
     inc qword [rsp+32]
 .next:
     inc qword [rsp+40]
-    jmp .loop
+    jmp near .loop
 .done:
     mov rax,[rsp+32]
     add rsp,56
@@ -3713,9 +3748,9 @@ rosam_partition:
 global rosam_stable_partition
 rosam_stable_partition:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     test r8,r8
-    jz .bad
+    jz near .bad
     sub rsp,72
     mov [rsp+8],rcx
     mov [rsp+16],rdx
@@ -3726,19 +3761,19 @@ rosam_stable_partition:
     shl rdi,2
     call malloc
     test rax,rax
-    jz .oom
+    jz near .oom
     mov [rsp+48],rax
 .pass1:
     mov r10,[rsp+40]
     cmp r10,[rsp+16]
-    jae .pass1_done
+    jae near .pass1_done
     mov rcx,[rsp+8]
     lea rcx,[rcx+r10*4]
     mov rdx,r10
     mov rax,[rsp+24]
     call rax
     test eax,eax
-    jz .p1next
+    jz near .p1next
     mov r10,[rsp+40]
     mov r9,[rsp+32]
     mov rcx,[rsp+8]
@@ -3748,20 +3783,20 @@ rosam_stable_partition:
     inc qword [rsp+32]
 .p1next:
     inc qword [rsp+40]
-    jmp .pass1
+    jmp near .pass1
 .pass1_done:
     mov qword [rsp+40],0
 .pass2:
     mov r10,[rsp+40]
     cmp r10,[rsp+16]
-    jae .copyback
+    jae near .copyback
     mov rcx,[rsp+8]
     lea rcx,[rcx+r10*4]
     mov rdx,r10
     mov rax,[rsp+24]
     call rax
     test eax,eax
-    jnz .p2next
+    jnz near .p2next
     mov r10,[rsp+40]
     mov r9,[rsp+32]
     mov rcx,[rsp+8]
@@ -3771,7 +3806,7 @@ rosam_stable_partition:
     inc qword [rsp+32]
 .p2next:
     inc qword [rsp+40]
-    jmp .pass2
+    jmp near .pass2
 .copyback:
     mov rcx,[rsp+8]
     mov rsi,[rsp+48]
@@ -3809,9 +3844,9 @@ global rosam_format_bool
 rosam_format_bool:
     mov r8,rcx
     test edx,edx
-    jz .false
+    jz near .false
     lea r9,[rel rosam_linux_true]
-    jmp .copy
+    jmp near .copy
 .false:
     lea r9,[rel rosam_linux_false]
 .copy:
@@ -3820,9 +3855,9 @@ rosam_format_bool:
     mov dl,[r9+rax]
     mov [r8+rax],dl
     test dl,dl
-    jz .done
+    jz near .done
     inc rax
-    jmp .loop
+    jmp near .loop
 .done:
     ret
 
@@ -3859,17 +3894,17 @@ rosam_format_u32:
 
 global rosam_format_i64
 rosam_format_i64:
-    jmp rosam_itoa_i64
+    jmp near rosam_itoa_i64
 
 
 global rosam_format_u64
 rosam_format_u64:
-    jmp rosam_utoa_u64
+    jmp near rosam_utoa_u64
 
 
 global rosam_format_dec
 rosam_format_dec:
-    jmp rosam_format_u32
+    jmp near rosam_format_u32
 
 
 global rosam_format_hex
@@ -3879,35 +3914,35 @@ rosam_format_hex:
     lea r9,[rel rosam_linux_int_buf+31]
     mov byte [r9],0
     test eax,eax
-    jnz .convert
+    jnz near .convert
     dec r9
     mov byte [r9],'0'
-    jmp .copy
+    jmp near .copy
 .convert:
     mov ecx,16
 .loop:
     xor edx,edx
     div ecx
     cmp dl,9
-    jbe .digit
+    jbe near .digit
     add dl,'A'-10
-    jmp .store
+    jmp near .store
 .digit:
     add dl,'0'
 .store:
     dec r9
     mov [r9],dl
     test eax,eax
-    jnz .loop
+    jnz near .loop
 .copy:
     xor eax,eax
 .c_loop:
     mov dl,[r9+rax]
     mov [r8+rax],dl
     test dl,dl
-    jz .done
+    jz near .done
     inc eax
-    jmp .c_loop
+    jmp near .c_loop
 .done:
     ret
 
@@ -3924,10 +3959,10 @@ rosam_format_oct:
     lea r9,[rel rosam_linux_int_buf+31]
     mov byte [r9],0
     test eax,eax
-    jnz .convert
+    jnz near .convert
     dec r9
     mov byte [r9],'0'
-    jmp .copy
+    jmp near .copy
 .convert:
     mov ecx,8
 .loop:
@@ -3937,16 +3972,16 @@ rosam_format_oct:
     dec r9
     mov [r9],dl
     test eax,eax
-    jnz .loop
+    jnz near .loop
 .copy:
     xor eax,eax
 .c_loop:
     mov dl,[r9+rax]
     mov [r8+rax],dl
     test dl,dl
-    jz .done
+    jz near .done
     inc eax
-    jmp .c_loop
+    jmp near .c_loop
 .done:
     ret
 
@@ -3954,9 +3989,9 @@ rosam_format_oct:
 global rosam_format_append
 rosam_format_append:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     test rdx,rdx
-    jz .bad
+    jz near .bad
     sub rsp,48
     mov [rsp+8],rcx
     mov [rsp+16],rdx
@@ -3974,7 +4009,7 @@ rosam_format_append:
     mov r8,[rsp+24]
     mov r10,[rsp+32]
     cmp r10,r8
-    jae .done
+    jae near .done
     mov rax,r8
     sub rax,r10
     dec rax
@@ -3988,7 +4023,9 @@ rosam_format_append:
     call memcpy
     add rsp,8
     mov rcx,[rsp+8]
-    mov byte [rcx+r10+r9],0
+    mov rax,r10
+    add rax,r9
+    mov byte [rcx+rax],0
 .done:
     mov rax,[rsp+8]
     add rsp,48
@@ -4006,7 +4043,7 @@ rosam_format_f32:
     mov rdi,rcx
     mov esi,128
     test r8d,r8d
-    jz .def
+    jz near .def
     lea rdx,[rel rosam_linux_fmt_gp]
     mov ecx,r8d
     mov eax,1
@@ -4031,21 +4068,21 @@ rosam_format_f64:
 global rosam_format_value
 rosam_format_value:
     cmp r8d,1
-    je .i32
+    je near .i32
     cmp r8d,2
-    je .i64
+    je near .i64
     cmp r8d,3
-    je .u32
+    je near .u32
     cmp r8d,4
-    je .u64
+    je near .u64
     cmp r8d,5
-    je .bool
+    je near .bool
     cmp r8d,6
-    je .char
+    je near .char
     cmp r8d,7
-    je .f32
+    je near .f32
     cmp r8d,8
-    je .f64
+    je near .f64
     mov dword [rel rosam_linux_error],ROSAM_ERR_INVALID_ARGUMENT
     xor eax,eax
     ret
@@ -4064,7 +4101,7 @@ rosam_i32_min:
     mov eax,dword [rcx]
     mov r8d,dword [rdx]
     cmp eax,r8d
-    jle .done
+    jle near .done
     mov eax,r8d
     mov dword [rcx],eax
 .done: ret
@@ -4075,7 +4112,7 @@ rosam_i32_max:
     mov eax,dword [rcx]
     mov r8d,dword [rdx]
     cmp eax,r8d
-    jge .done
+    jge near .done
     mov eax,r8d
     mov dword [rcx],eax
 .done: ret
@@ -4086,12 +4123,12 @@ rosam_i32_clamp:
     mov eax,dword [rcx]
     mov r9d,dword [rdx]
     cmp eax,r9d
-    jge .hi
+    jge near .hi
     mov eax,r9d
 .hi:
     mov r10d,dword [r8]
     cmp eax,r10d
-    jle .store
+    jle near .store
     mov eax,r10d
 .store:
     mov dword [rcx],eax
@@ -4103,7 +4140,7 @@ rosam_u32_min:
     mov eax,dword [rcx]
     mov r8d,dword [rdx]
     cmp eax,r8d
-    jbe .done
+    jbe near .done
     mov eax,r8d
     mov dword [rcx],eax
 .done: ret
@@ -4115,7 +4152,7 @@ rosam_u32_max:
     mov eax,dword [rcx]
     mov r8d,dword [rdx]
     cmp eax,r8d
-    jae .done
+    jae near .done
     mov eax,r8d
     mov dword [rcx],eax
 .done: ret
@@ -4126,12 +4163,12 @@ rosam_u32_clamp:
     mov eax,dword [rcx]
     mov r9d,dword [rdx]
     cmp eax,r9d
-    jae .hi
+    jae near .hi
     mov eax,r9d
 .hi:
     mov r10d,dword [r8]
     cmp eax,r10d
-    jbe .store
+    jbe near .store
     mov eax,r10d
 .store:
     mov dword [rcx],eax
@@ -4143,7 +4180,7 @@ rosam_i64_min:
     mov rax,qword [rcx]
     mov r8,qword [rdx]
     cmp rax,r8
-    jle .done
+    jle near .done
     mov rax,r8
     mov qword [rcx],rax
 .done: ret
@@ -4154,7 +4191,7 @@ rosam_i64_max:
     mov rax,qword [rcx]
     mov r8,qword [rdx]
     cmp rax,r8
-    jge .done
+    jge near .done
     mov rax,r8
     mov qword [rcx],rax
 .done: ret
@@ -4165,12 +4202,12 @@ rosam_i64_clamp:
     mov rax,qword [rcx]
     mov r9,qword [rdx]
     cmp rax,r9
-    jge .hi
+    jge near .hi
     mov rax,r9
 .hi:
     mov r10,qword [r8]
     cmp rax,r10
-    jle .store
+    jle near .store
     mov rax,r10
 .store:
     mov qword [rcx],rax
@@ -4182,7 +4219,7 @@ rosam_u64_min:
     mov rax,qword [rcx]
     mov r8,qword [rdx]
     cmp rax,r8
-    jbe .done
+    jbe near .done
     mov rax,r8
     mov qword [rcx],rax
 .done: ret
@@ -4193,7 +4230,7 @@ rosam_u64_max:
     mov rax,qword [rcx]
     mov r8,qword [rdx]
     cmp rax,r8
-    jae .done
+    jae near .done
     mov rax,r8
     mov qword [rcx],rax
 .done: ret
@@ -4204,12 +4241,12 @@ rosam_u64_clamp:
     mov rax,qword [rcx]
     mov r9,qword [rdx]
     cmp rax,r9
-    jae .hi
+    jae near .hi
     mov rax,r9
 .hi:
     mov r10,qword [r8]
     cmp rax,r10
-    jbe .store
+    jbe near .store
     mov rax,r10
 .store:
     mov qword [rcx],rax
@@ -4245,7 +4282,7 @@ rosam_u32_div:
     mov eax,dword [rcx]
     mov r8d,dword [rdx]
     test r8d,r8d
-    jz .zero
+    jz near .zero
     xor edx,edx
     div r8d
     mov dword [rcx],eax
@@ -4261,7 +4298,7 @@ rosam_u32_mod:
     mov eax,dword [rcx]
     mov r8d,dword [rdx]
     test r8d,r8d
-    jz .zero
+    jz near .zero
     xor edx,edx
     div r8d
     mov dword [rcx],edx
@@ -4302,7 +4339,7 @@ rosam_u64_div:
     mov rax,qword [rcx]
     mov r8,qword [rdx]
     test r8,r8
-    jz .zero
+    jz near .zero
     xor edx,edx
     div r8
     mov qword [rcx],rax
@@ -4318,7 +4355,7 @@ rosam_u64_mod:
     mov rax,qword [rcx]
     mov r8,qword [rdx]
     test r8,r8
-    jz .zero
+    jz near .zero
     xor edx,edx
     div r8
     mov qword [rcx],rdx
@@ -4333,45 +4370,46 @@ rosam_u64_mod:
 global rosam_atoi_i32
 rosam_atoi_i32:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     xor rax,rax
     xor r8d,r8d
     mov r9d,0
     cmp byte [rcx],'-'
-    jne .plus
+    jne near .plus
     mov r8d,1
     inc rcx
-    jmp .digits
+    jmp near .digits
 .plus:
     cmp byte [rcx],'+'
-    jne .digits
+    jne near .digits
     inc rcx
 .digits:
     movzx edx,byte [rcx]
     test dl,dl
-    jz .finish
+    jz near .finish
     cmp dl,'0'
-    jb .bad
+    jb near .bad
     cmp dl,'9'
-    ja .bad
+    ja near .bad
     sub edx,'0'
     imul rax,rax,10
     add rax,rdx
     inc r9
     ; signed limits checked after accumulation
-    jmp .digits
+    jmp near .digits
 .finish:
     test r8d,r8d
-    jz .positive_check
-    cmp rax,2147483648
-    ja .overflow
+    jz near .positive_check
+    mov edx,0x80000000
+    cmp rax,rdx
+    ja near .overflow
     neg rax
     movsxd rdx,eax
     mov eax,edx
     ret
 .positive_check:
     cmp rax,2147483647
-    ja .overflow
+    ja near .overflow
     mov eax,eax
     ret
 .overflow:
@@ -4387,46 +4425,46 @@ rosam_atoi_i32:
 global rosam_atoi_i64
 rosam_atoi_i64:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     xor rax,rax
     xor r8d,r8d
     cmp byte [rcx],'-'
-    jne .plus
+    jne near .plus
     mov r8d,1
     inc rcx
-    jmp .digits
+    jmp near .digits
 .plus:
     cmp byte [rcx],'+'
-    jne .digits
+    jne near .digits
     inc rcx
 .digits:
     movzx edx,byte [rcx]
     test dl,dl
-    jz .finish
+    jz near .finish
     cmp dl,'0'
-    jb .bad
+    jb near .bad
     cmp dl,'9'
-    ja .bad
+    ja near .bad
     sub edx,'0'
     mov r9,rax
     imul rax,rax,10
-    jo .overflow
+    jo near .overflow
     add rax,rdx
-    jc .overflow
+    jc near .overflow
     inc rcx
-    jmp .digits
+    jmp near .digits
 .finish:
     test r8d,r8d
-    jz .positive
+    jz near .positive
     mov r10,0x8000000000000000
     cmp rax,r10
-    ja .overflow
+    ja near .overflow
     neg rax
     ret
 .positive:
     mov r10,0x7fffffffffffffff
     cmp rax,r10
-    ja .overflow
+    ja near .overflow
     ret
 .overflow:
     mov qword [rel rosam_linux_error],ROSAM_ERR_OVERFLOW
@@ -4441,23 +4479,24 @@ rosam_atoi_i64:
 global rosam_atou_u32
 rosam_atou_u32:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     xor rax,rax
 .loop:
     movzx edx,byte [rcx]
     test dl,dl
-    jz .done
+    jz near .done
     cmp dl,'0'
-    jb .bad
+    jb near .bad
     cmp dl,'9'
-    ja .bad
+    ja near .bad
     sub edx,'0'
     imul rax,rax,10
     add rax,rdx
-    cmp rax,0xffffffff
-    ja .overflow
+    mov edx,0xffffffff
+    cmp rax,rdx
+    ja near .overflow
     inc rcx
-    jmp .loop
+    jmp near .loop
 .done:
     ret
 .overflow:
@@ -4473,28 +4512,28 @@ rosam_atou_u32:
 global rosam_atou_u64
 rosam_atou_u64:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     xor rax,rax
     mov r8,1844674407370955161
 .loop:
     movzx edx,byte [rcx]
     test dl,dl
-    jz .done
+    jz near .done
     cmp dl,'0'
-    jb .bad
+    jb near .bad
     cmp dl,'9'
-    ja .bad
+    ja near .bad
     sub edx,'0'
     cmp rax,r8
-    ja .overflow
-    jne .acc
+    ja near .overflow
+    jne near .acc
     cmp edx,5
-    ja .overflow
+    ja near .overflow
 .acc:
     imul rax,rax,10
     add rax,rdx
     inc rcx
-    jmp .loop
+    jmp near .loop
 .done:
     ret
 .overflow:
@@ -4510,12 +4549,12 @@ rosam_atou_u64:
 global rosam_itoa_i32
 rosam_itoa_i32:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     mov r8,rcx
     movsxd rax,edx
     xor r10d,r10d
     test rax,rax
-    jns .positive
+    jns near .positive
     mov byte [r8],'-'
     inc r8
     mov r10d,1
@@ -4524,10 +4563,10 @@ rosam_itoa_i32:
     lea r9,[rel rosam_linux_int_buf+31]
     mov byte [r9],0
     test rax,rax
-    jnz .convert
+    jnz near .convert
     dec r9
     mov byte [r9],'0'
-    jmp .copy
+    jmp near .copy
 .convert:
     mov r11,10
 .loop:
@@ -4537,16 +4576,16 @@ rosam_itoa_i32:
     dec r9
     mov [r9],dl
     test rax,rax
-    jnz .loop
+    jnz near .loop
 .copy:
     xor eax,eax
 .c_loop:
     mov dl,[r9+rax]
     mov [r8+rax],dl
     test dl,dl
-    jz .done
+    jz near .done
     inc eax
-    jmp .c_loop
+    jmp near .c_loop
 .done:
     add eax,r10d
     ret
@@ -4559,16 +4598,16 @@ rosam_itoa_i32:
 global rosam_utoa_u32
 rosam_utoa_u32:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     mov r8,rcx
     mov eax,edx
     lea r9,[rel rosam_linux_int_buf+31]
     mov byte [r9],0
     test eax,eax
-    jnz .convert
+    jnz near .convert
     dec r9
     mov byte [r9],'0'
-    jmp .copy
+    jmp near .copy
 .convert:
     mov r11d,10
 .loop:
@@ -4578,16 +4617,16 @@ rosam_utoa_u32:
     dec r9
     mov [r9],dl
     test eax,eax
-    jnz .loop
+    jnz near .loop
 .copy:
     xor eax,eax
 .c_loop:
     mov dl,[r9+rax]
     mov [r8+rax],dl
     test dl,dl
-    jz .done
+    jz near .done
     inc eax
-    jmp .c_loop
+    jmp near .c_loop
 .done:
     ret
 .bad:
@@ -4599,12 +4638,12 @@ rosam_utoa_u32:
 global rosam_itoa_i64
 rosam_itoa_i64:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     mov r8,rcx
     mov rax,rdx
     xor r10d,r10d
     test rax,rax
-    jns .positive
+    jns near .positive
     mov byte [r8],'-'
     inc r8
     mov r10d,1
@@ -4613,10 +4652,10 @@ rosam_itoa_i64:
     lea r9,[rel rosam_linux_int_buf+31]
     mov byte [r9],0
     test rax,rax
-    jnz .convert
+    jnz near .convert
     dec r9
     mov byte [r9],'0'
-    jmp .copy
+    jmp near .copy
 .convert:
     mov r11,10
 .loop:
@@ -4626,16 +4665,16 @@ rosam_itoa_i64:
     dec r9
     mov [r9],dl
     test rax,rax
-    jnz .loop
+    jnz near .loop
 .copy:
     xor eax,eax
 .c_loop:
     mov dl,[r9+rax]
     mov [r8+rax],dl
     test dl,dl
-    jz .done
+    jz near .done
     inc eax
-    jmp .c_loop
+    jmp near .c_loop
 .done:
     add eax,r10d
     ret
@@ -4648,16 +4687,16 @@ rosam_itoa_i64:
 global rosam_utoa_u64
 rosam_utoa_u64:
     test rcx,rcx
-    jz .bad
+    jz near .bad
     mov r8,rcx
     mov rax,rdx
     lea r9,[rel rosam_linux_int_buf+31]
     mov byte [r9],0
     test rax,rax
-    jnz .convert
+    jnz near .convert
     dec r9
     mov byte [r9],'0'
-    jmp .copy
+    jmp near .copy
 .convert:
     mov r11,10
 .loop:
@@ -4667,16 +4706,16 @@ rosam_utoa_u64:
     dec r9
     mov [r9],dl
     test rax,rax
-    jnz .loop
+    jnz near .loop
 .copy:
     xor eax,eax
 .c_loop:
     mov dl,[r9+rax]
     mov [r8+rax],dl
     test dl,dl
-    jz .done
+    jz near .done
     inc eax
-    jmp .c_loop
+    jmp near .c_loop
 .done:
     ret
 .bad:
@@ -4694,9 +4733,9 @@ global rosam_i32_abs
 rosam_i32_abs:
     mov eax,[rcx]
     test eax,eax
-    jns .done
+    jns near .done
     neg eax
-    jo .overflow
+    jo near .overflow
 .done:
     mov [rcx],eax
     ret
@@ -4708,9 +4747,9 @@ global rosam_i64_abs
 rosam_i64_abs:
     mov rax,[rcx]
     test rax,rax
-    jns .done
+    jns near .done
     neg rax
-    jo .overflow
+    jo near .overflow
 .done:
     mov [rcx],rax
     ret
